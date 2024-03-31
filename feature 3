@@ -1,0 +1,55 @@
+import streamlit as st
+from openai import OpenAI
+
+# Initialize OpenAI client with your API key
+client = OpenAI(api_key='my api key here')
+
+# Function to fetch current average interest rate range in California from OpenAI
+def fetch_interest_rate():
+    # Define a prompt related to mortgage rates
+    prompt = "What are the current average 30-year fixed mortgage rates in California?"
+    
+    # Generate a text completion using the chat model
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a financial analyst"},
+            {"role": "user", "content": prompt},
+        ]
+    )
+    
+    # Extract the response containing mortgage rate information
+    mortgage_rate = completion.choices[0].message.content
+    return mortgage_rate
+
+# Function to calculate monthly mortgage payments
+def calculate_monthly_payment(loan_amount, annual_interest_rate, loan_term_years):
+    monthly_interest_rate = annual_interest_rate / 100 / 12
+    num_payments = loan_term_years * 12
+    monthly_payment = (loan_amount * monthly_interest_rate) / (1 - (1 + monthly_interest_rate) ** -num_payments)
+    return monthly_payment
+
+# Streamlit UI and main function
+def main():
+    st.title("Mortgage Comparison Tool")
+    st.write("Welcome to the Mortgage Comparison Tool! Enter your loan details below to compare mortgage offers from different lenders.")
+
+    # Fetch current average interest rate range in California from OpenAI
+    interest_rate_range = fetch_interest_rate()
+    st.info(f"Current Average Interest Rate in California: {interest_rate_range}")
+
+    # User input for loan details
+    loan_amount = st.number_input("Loan Amount ($)", min_value=0)
+    interest_rate = st.number_input("Interest Rate (%)", min_value=0.0, step=0.01)
+    loan_term = st.number_input("Loan Term (years)", min_value=1)
+
+    # Button to calculate mortgage payments
+    calculate_button = st.button("Calculate Mortgage Payments")
+    if calculate_button:
+        # Calculate monthly mortgage payment
+        monthly_payment = calculate_monthly_payment(loan_amount, interest_rate, loan_term)
+        st.subheader("Monthly Mortgage Payment:")
+        st.write(f"${monthly_payment:.2f}")
+
+if __name__ == "__main__":
+    main()
